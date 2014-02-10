@@ -5,7 +5,7 @@ require 'time_series'
 module Hexun
   class Fund
     def initialize(symbol)
-      @symbol = symbol.to_i
+      @symbol = "%06d" % symbol.to_i
     end
 
     def quotes
