@@ -39,5 +39,23 @@ module Hexun
 
       return dividends
     end
+
+    def holdings(year = Time.now.year, quarter = ((Time.now.month - 4) / 3) + 1)
+      query_string = "fundcode=#{@symbol}&date=#{year}-#{(quarter * 3).to_s.rjust(2, "0")}-15"
+      page = Nokogiri::HTML(open("http://jingzhi.funds.hexun.com/Detail/DataOutput/Top10HoldingStock.aspx?#{query_string}"))
+
+      holdings = []
+      page.css("table tr").drop(1).each do |line|
+        values = line.css("td")
+
+        holdings << {
+          stock:  (values[0].css('a').attribute('href').to_s =~ /\d{6}/).to_s.rjust(6, "0"),
+          amount: values[3].text.to_i,
+          weight: values[4].text.to_f / 100
+        }
+      end
+
+      return holdings
+    end
   end
 end
