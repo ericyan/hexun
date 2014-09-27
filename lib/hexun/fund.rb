@@ -49,7 +49,7 @@ module Hexun
         values = line.css("td")
 
         holdings << {
-          stock:  (values[0].css('a').attribute('href').to_s =~ /\d{6}/).to_s.rjust(6, "0"),
+          stock:  /\/(\d{6})\./.match(values[0].css('a').attribute('href').to_s)[1].rjust(6, "0"),
           amount: values[3].text.to_i,
           weight: values[4].text.to_f / 100
         }
