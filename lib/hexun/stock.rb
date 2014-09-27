@@ -4,7 +4,7 @@ require 'json'
 
 module Hexun
   class Stock
-    attr_reader :name
+    attr_reader :name, :pe
 
     def initialize(symbol)
       @symbol = "%06d" % symbol.to_i
@@ -78,9 +78,12 @@ module Hexun
 
           @bids = Hash[data["BuyPrice"].collect { |p| p.to_f / 100 }.zip(data["BuyVolume"])]
           @offers = Hash[data["SellPrice"].collect { |p| p.to_f / 100 }.zip(data["SellVolume"])]
+
+          @pe = data["PE"].to_f / 100
         rescue
           @price = 0
           @previous_close = 0
+          @pe = 0
         end
       end
   end
