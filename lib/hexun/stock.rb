@@ -52,19 +52,25 @@ module Hexun
         query_string = "code=#{@exchange}#{@symbol}&callback=callback&column=#{keys.join(',')}"
         quote = "http://webstock.quote.hermes.hexun.com/a/quotelist?#{query_string}"
 
-        values = JSON.parse(/\((.*?)\);/.match(URI.parse(quote).read)[1])["Data"][0][0]
-        data = Hash[keys.zip(values)]
+        begin
+          values = JSON.parse(/\((.*?)\);/.match(URI.parse(quote).read)[1])["Data"][0][0]
+          data = Hash[keys.zip(values)]
 
-        @open = data["Open"].to_f / 100
-        @high = data["LastClose"].to_f / 100
-        @low = data["Low"].to_f / 100
-        @previous_close = data["LastClose"].to_f / 100
-        @price = data["Price"].to_f / 100
-        @volume = data["Volume"]
-        @amount = data["Amount"].to_f / 100
+          @open = data["Open"].to_f / 100
+          @high = data["LastClose"].to_f / 100
+          @low = data["Low"].to_f / 100
+          @previous_close = data["LastClose"].to_f / 100
+          @price = data["Price"].to_f / 100
+          @volume = data["Volume"]
+          @amount = data["Amount"].to_f / 100
 
-        @bids = Hash[data["BuyPrice"].collect { |p| p.to_f / 100 }.zip(data["BuyVolume"])]
-        @offers = Hash[data["SellPrice"].collect { |p| p.to_f / 100 }.zip(data["SellVolume"])]
+          @bids = Hash[data["BuyPrice"].collect { |p| p.to_f / 100 }.zip(data["BuyVolume"])]
+          @offers = Hash[data["SellPrice"].collect { |p| p.to_f / 100 }.zip(data["SellVolume"])]
+        rescue
+          @price = 0
+          @previous_close = 0
+        end
+
       end
   end
 end
