@@ -29,16 +29,25 @@ module Hexun
 
     private
       def get_basic_info
-        page = Nokogiri::HTML(open("http://stockdata.stock.hexun.com/#{@symbol}.shtml"))
+        basic_info = Cache.get_or_set "#{@symbol}-basicinfo-#{Date.today}" do
+          page = Nokogiri::HTML(open("http://stockdata.stock.hexun.com/#{@symbol}.shtml"))
 
-        @name = page.css("#quoteName").text
-        info = page.css("table.box6 td").collect { |td| td.text.strip }
-        [29, 28, 25, 22, 5, 4].each { |index| info.delete_at(index) }
-        data = Hash[info.each_slice(2).collect.to_a]
+          info = page.css("table.box6 td").collect { |td| td.text.strip }
+          [29, 28, 25, 22, 5, 4].each { |index| info.delete_at(index) }
+          data = Hash[info.each_slice(2).collect.to_a]
 
-        @shares_outstanding = data["总股本(亿)"].to_f * 100000000
-        @free_float = data["流通A股(亿)"].to_f * 100000000
-        @eps = data["每股收益(元)"].to_f
+          {
+            name: page.css("#quoteName").text,
+            shares_outstanding: data["总股本(亿)"].to_f * 100000000,
+            free_float: data["流通A股(亿)"].to_f * 100000000,
+            eps: data["每股收益(元)"].to_f
+          }
+        end
+
+        @name = basic_info[:name]
+        @shares_outstanding = basic_info[:shares_outstanding]
+        @free_float = basic_info[:free_float]
+        @eps = basic_info[:eps]
       end
 
       def get_last_quote
@@ -49,11 +58,14 @@ module Hexun
                 "InVolume", "AvePrice", "VolumeRatio", "PE", "ExchangeRatio",
                 "LastVolume", "VibrationRatio", "DateTime", "OpenTime", "CloseTime"]
 
-        query_string = "code=#{@exchange}#{@symbol}&callback=callback&column=#{keys.join(',')}"
-        quote = "http://webstock.quote.hermes.hexun.com/a/quotelist?#{query_string}"
+        values = Cache.get_or_set "#{@symbol}-quote-#{Date.today}" do
+          query_string = "code=#{@exchange}#{@symbol}&callback=callback&column=#{keys.join(',')}"
+          quote = URI.parse("http://webstock.quote.hermes.hexun.com/a/quotelist?#{query_string}").read
+
+          JSON.parse(/\((.*?)\);/.match(quote)[1])["Data"][0][0]
+        end
 
         begin
-          values = JSON.parse(/\((.*?)\);/.match(URI.parse(quote).read)[1])["Data"][0][0]
           data = Hash[keys.zip(values)]
 
           @open = data["Open"].to_f / 100
@@ -70,7 +82,6 @@ module Hexun
           @price = 0
           @previous_close = 0
         end
-
       end
   end
 end
