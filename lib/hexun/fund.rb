@@ -57,5 +57,11 @@ module Hexun
 
       return holdings
     end
+
+    private
+
+    def open(uri)
+      return Kernel.open(uri, "User-Agent" => "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36")
+    end
   end
 end
